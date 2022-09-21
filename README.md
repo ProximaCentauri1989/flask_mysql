@@ -41,12 +41,12 @@ This step creates migrations folder which contains versions (migration files)
 flask db migrate
 ```
 
-This tep will generate *.py file with upgrade() and downgrade() methods
+This step will generate *.py file with upgrade() and downgrade() methods
 
 4. Run migrations
 
 ```
-flask db upgrade or lask db downgrade
+flask db upgrade or flask db downgrade
 ```
 
 
