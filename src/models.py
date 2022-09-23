@@ -8,3 +8,12 @@ class User(db.Model):
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
+    
+    @property
+    def as_json(self):
+       """Return object data in easily serializable format"""
+       return {
+           'id'         : self.id,
+           'username': self.username,
+           'email'  : self.email,
+       }

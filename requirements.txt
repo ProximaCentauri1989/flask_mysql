@@ -2,7 +2,12 @@ Flask==2.0.1
 Jinja2==3.0
 Flask-MySQL==1.5.1
 Flask-Migrate
+Flask-Cors
+Flask-RESTful
+flask-expects-json
 PyMySQL==0.10.0
 Flask-Script==2.0.6
 markupsafe==2.1.1
 itsdangerous==2.1.1
+flask_expects_json
+flask_parameter_validation
