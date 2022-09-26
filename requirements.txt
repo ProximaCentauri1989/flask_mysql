@@ -11,3 +11,5 @@ markupsafe==2.1.1
 itsdangerous==2.1.1
 flask_expects_json
 flask_parameter_validation
+apiflask
+werkzeug

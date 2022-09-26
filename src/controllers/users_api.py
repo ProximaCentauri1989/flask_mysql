@@ -2,65 +2,63 @@
     api/users
 """
 
-from flask_expects_json import expects_json
 from flask_cors import CORS
-from flask import Blueprint, request
-from .schemas.schemas import user_schema
-from ..models import User
+from flask import request
+from apiflask import APIBlueprint
+from .utils import abort
+from ..models import User, Payment
 from ..db import get_connection
+from ..api_models.api_models import UserIn, UserOut, APIResponseBaseReduced, APIResponseGetUsers
 
 session = get_connection()
-blueprint = Blueprint('users', __name__)
-
-def format_response(code, reason=None, data=None):
-    resp = {
-        "result": "Success" if (code == 200) else "Failed"
-    }
-    if reason:
-        resp["reason"] = reason
-    if data:
-        resp["data"] = data
-
-    return resp, code
+blueprint = APIBlueprint('users', __name__)
 
 @blueprint.route('/users', methods=['GET'])
+@blueprint.output(APIResponseGetUsers)
 def getAll():
     try:
-        users = session.query(User).all()
-        return format_response(200, data=[item.as_json for item in users])
+        users = []
+        show_payments = request.args.get('show_payments', None)
+        if show_payments:
+            users = session.query(User).join(Payment, isouter=True).all() # isouter=True will include users which do not have payments
+        else:
+            users = session.query(User).all() # autojoin works here which is unexpected
+        return  { 'data': [item.as_json for item in users] }
     except Exception as err:
         print(err)
-        return format_response(500, reason='Failed to get users')
+        abort(500, description='Failed to get users')
 
-@blueprint.route('/user/<int:id>', methods=['GET']) 
+@blueprint.route('/user/<int:id>', methods=['GET'])
+@blueprint.output(UserOut)
 def getById(id):
     try:
         user = session.get(User, id)
         if user is not None:
-            return format_response(200, data=user.as_json)
+            return user.as_json
         else:
-            return format_response(404, "Not found")
+            abort(404, "Not found")
     except Exception as err:
         print(err)
-        return format_response(200, reason='Failed to get users')
+        abort(500, description='Failed to get users')
 
-@blueprint.route('/user/<int:id>', methods=['DELETE']) 
+@blueprint.route('/user/<int:id>', methods=['DELETE'])
+@blueprint.output(APIResponseBaseReduced)
 def deleteById(id):
     try:
         user = session.get(User, id)
-        if user is None:
-            return format_response(404, "Not found")
+        if not user:
+            abort(404, description="No user exist by id {}".format(id))
         
         session.delete(user)
         session.commit()
-        return format_response(200)
+        return { "result": "success" }
     except Exception as err:
-        print(err)
-        return format_response(500, reason='Failed to delete user')
+        abort(500, description='Failed to delete user')
 
-@blueprint.route('/user', methods=['POST']) 
-@expects_json(user_schema)
-def post():
+@blueprint.route('/user', methods=['POST'])
+@blueprint.input(UserIn)
+@blueprint.output(APIResponseBaseReduced)
+def post(data):
     """Create new user
         Returns:
             200: txid
@@ -68,20 +66,20 @@ def post():
         """
         
     try:
-        username = request.json.get('username')
-        email = request.json.get('email')
-        password = request.json.get('password')
+        username = data.get('username')
+        email = data.get('email')
+        password = data.get('password')
 
         session.add(User(
             username=username,
             email=email,
             password_hash=password
         ))
-        session.commit()  
-        return format_response(200)
+        session.commit()
+        return { "result": "success" }
     except Exception as err:
         print(err)
-        return format_response(500, reason='Failed to create new user')
+        abort(500, description='Failed to create new user')
 
 
 CORS(blueprint)

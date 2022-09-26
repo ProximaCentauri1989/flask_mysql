@@ -11,7 +11,7 @@ def get_connection():
         return session
     try:
         config = Config()
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI, echo=True)
         make_session = sessionmaker(bind=engine)
         session = make_session()
     except Exception as err:
